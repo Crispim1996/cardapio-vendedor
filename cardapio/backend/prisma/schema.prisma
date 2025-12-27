@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  products  Product[]
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  code      String
+  name      String
+  category  String
+  yieldQty  Float
+  notes     String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ingredients IngredientItem[]
+  variableCosts VariableCost[]
+  labor Labor?
+  snapshots PricingSnapshot[]
+}
+
+model IngredientItem {
+  id              String  @id @default(cuid())
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  name            String
+  unit            String
+  grossQty        Float
+  correctionFactor Float
+  netQty          Float
+  paidValue       Float
+  packageQty      Float
+  packageUnit     String
+  unitCost        Float
+  totalCost       Float
+}
+
+model VariableCost {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  value     Float
+  appliesTo String // "RECEITA" | "UNIDADE"
+}
+
+model Labor {
+  productId  String @id
+  product    Product @relation(fields: [productId], references: [id])
+  hourlyRate Float
+  minutes    Float
+  peopleCount Int
+  totalCost  Float
+}
+
+model Settings {
+  id               String @id @default(cuid())
+  userId           String? @unique
+  user             User? @relation(fields: [userId], references: [id])
+  taxesPct         Float @default(0)
+  feesPct          Float @default(0)
+  fixedMonthly     Float @default(0)
+  fixedUnitsPerMonth Float @default(1000)
+  currency         String @default("BRL")
+}
+
+model PricingSnapshot {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+
+  marginDesiredPct Float
+  pricingMode      String
+
+  // resumo do resultado
+  productionTotal        Float
+  unitCost               Float
+  suggestedUnitPrice     Float
+  suggestedRecipePrice   Float
+  markup                 Float
+  contributionMarginValue Float
+  contributionMarginPct   Float
+  breakEvenUnits          Int
+  breakEvenRevenue        Float
+}
